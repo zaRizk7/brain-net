@@ -27,13 +27,19 @@ class Attention(nn.Module):
         r"""
         Args:
             qkv (tuple of Tensor): Tuple of (Q, K, V), each with shape
-                (batch_size, num_heads, seq_len, dim)
+                (batch_size, seq_len, num_heads, dim)
 
         Returns:
-            Tensor: Output of attention, shape (batch_size, num_heads, seq_len, dim)
+            Tensor: Output tensor of shape (batch_size, seq_len, num_heads, dim)
+            Tensor: Attention weights of shape (batch_size, num_heads, seq_len, seq_len)
         """
         q, k, v = qkv
         d_k = k.size(-1)
+
+        # Transpose to get shape (batch_size, num_heads, seq_len, dim)
+        q = q.transpose(-3, -2)
+        k = k.transpose(-3, -2)
+        v = v.transpose(-3, -2)
 
         # Compute scaled attention scores
         scores = torch.matmul(q, k.mT) / (d_k**0.5)
@@ -47,4 +53,7 @@ class Attention(nn.Module):
         # Apply softmax and attend to values
         attn = self.softmax(scores)
         z = torch.matmul(attn, v)
+
+        # Transpose back to (batch_size, seq_len, num_heads, dim)
+        z = z.transpose(-3, -2)
         return z, attn
