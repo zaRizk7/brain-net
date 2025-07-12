@@ -2,6 +2,8 @@ from torch import nn
 
 from ..layers import EdgeToEdgeConv, EdgeToNodeConv, NodeToGraphConv
 
+__all__ = ["BrainNetCNN"]
+
 
 class BrainNetCNN(nn.Sequential):
     """
