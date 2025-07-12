@@ -73,16 +73,20 @@ class OCRead(nn.Module):
                 c_k -= torch.dot(c_k, u_j) / torch.dot(u_j, u_j) * u_j
             self.centers.data[k] = c_k / torch.norm(c_k)
 
-    def forward(self, x):
+    def forward(self, x, return_assignments=False):
         r"""
         Forward pass for OCRead.
 
         Args:
             x (Tensor): Input tensor of shape (batch_size, num_rois, num_embeddings)
+            return_assignments (bool): If True, also return the assignment weights.
+                Default: False.
 
         Returns:
             Tensor: Clustered readout tensor of shape (batch_size, num_clusters, num_embeddings),
                     computed as the aggreegated embeddings per cluster.
+            Tensor (optional): Assignment weights of shape (batch_size, num_rois, num_clusters),
+                    representing the soft assignment of each ROI to each cluster.
         """
         # Compute assignment weights via dot-product similarity
         # x: (batch_size, num_rois, num_embeddings)
@@ -94,4 +98,8 @@ class OCRead(nn.Module):
         # Transpose p: (batch_size, num_clusters, num_rois)
         # x:           (batch_size, num_rois, num_embeddings)
         # Output:      (batch_size, num_clusters, num_embeddings)
-        return torch.matmul(p.mT, x)
+        z = torch.matmul(p.mT, x)
+
+        if not return_assignments:
+            return z
+        return z, p
