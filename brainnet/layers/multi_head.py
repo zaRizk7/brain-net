@@ -17,6 +17,21 @@ class MultiHeadLinear(nn.Module):
         bias (bool): If set to `False`, the layer will not learn an additive bias. Default: `True`
         device (torch.device, optional): The device for the parameters.
         dtype (torch.dtype, optional): The data type for the parameters.
+
+    Shape:
+        - Input: `(..., num_inputs)`
+        - Output: `(..., num_heads, num_outputs)`
+
+    Variables:
+        - `weight`: Learnable weights of shape `(num_heads, num_outputs, num_inputs)`.
+        - `bias`: Learnable bias of shape `(num_heads, num_outputs)` if `bias` is `True`, otherwise `None`.
+
+    Examples:
+        >>> x = torch.randn(10, 64)  # Batch of 10, 64 inputs
+        >>> linear = MultiHeadLinear(64, 128, num_heads=4)
+        >>> output = linear(x)  # Output shape `(10, 4, 128)`
+        >>> print(output.shape)  # torch.Size([10, 4, 128])
+        >>> print(linear)  # MultiHeadLinear(num_inputs=64, num_outputs=128, num_heads=4, bias=True)
     """
 
     __constants__ = ["num_inputs", "num_outputs", "num_heads"]
@@ -93,6 +108,21 @@ class ConcatLinear(MultiHeadLinear):
         bias (bool): If set to `False`, the layer will not learn an additive bias. Default: `True`
         device (torch.device, optional): The device for the parameters.
         dtype (torch.dtype, optional): The data type for the parameters.
+
+    Shape:
+        - Input: `(..., num_heads, num_inputs)`
+        - Output: `(..., num_outputs)`
+
+    Variables:
+        - `weight`: Learnable weights of shape `(num_heads, num_outputs, num_inputs)`.
+        - `bias`: Learnable bias of shape `(num_outputs,)` if `bias` is `True`, otherwise `None`.
+
+    Examples:
+        >>> x = torch.randn(10, 4, 64)  # Batch of 10, 4 heads, 64 inputs
+        >>> linear = ConcatLinear(64, 128, num_heads=4)
+        >>> output = linear(x)  # Output shape `(10, 128)`
+        >>> print(output.shape)  # torch.Size([10, 128])
+        >>> print(linear)  # ConcatLinear(num_inputs=64, num_outputs=128, num_heads=4, bias=True)
     """
 
     def __repr__(self):
@@ -155,6 +185,18 @@ class MultiHeadAttention(nn.Module):
         mask (bool): Whether to apply causal masking in attention. Default: `False`
         device (torch.device, optional): The device for the parameters.
         dtype (torch.dtype, optional): The data type for the parameters.
+
+    Shape:
+        - Input: `(..., seq_len, d_model)`
+        - Output: `(..., seq_len, d_model)`
+        - Attention weights: `(..., num_heads, seq_len, seq_len)` if `return_attention=True`
+
+    Examples:
+        >>> mha = MultiHeadAttention(d_model=512, d_k=64, d_v=64, num_heads=8)
+        >>> x = torch.randn(10, 20, 512)  # Batch of 10, sequence length of 20, feature size of 512
+        >>> output, attn_weights = mha(x, return_attention=True)
+        >>> print(output.shape)  # Expected: (10, 20, 512)
+        >>> print(attn_weights.shape)  # Expected: (10, 8, 20, 20)
     """
 
     def __init__(self, d_model, d_k, d_v, num_heads=1, bias=True, mask=False, device=None, dtype=None):

@@ -13,6 +13,20 @@ class Attention(nn.Module):
 
     Args:
         mask (bool): Whether to apply causal (upper-triangular) masking to the attention scores.
+
+    Shape:
+        - Input: `(batch_size, seq_len, num_heads, dim)` for Q, K, V
+        - Output: `(batch_size, seq_len, num_heads, dim)`
+        - Attention weights: `(batch_size, num_heads, seq_len, seq_len)`
+
+    Example:
+        >>> attn = Attention(mask=True)
+        >>> q = torch.randn(2, 10, 4, 64)  # Batch of 2, seq_len=10, num_heads=4, dim=64
+        >>> k = torch.randn(2, 10, 4, 64)
+        >>> v = torch.randn(2, 10, 4, 64)
+        >>> output, attn_weights = attn((q, k, v))
+        >>> print(output.shape)  # Expected: (2, 10, 4, 64)
+        >>> print(attn_weights.shape)  # Expected: (2, 4, 10, 10)
     """
 
     __constants__ = ["mask"]

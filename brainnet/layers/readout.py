@@ -28,6 +28,15 @@ class OCRead(nn.Module):
     Shape:
         - Input: `(batch_size, num_rois, num_embeddings)`
         - Output: `(batch_size, num_clusters, num_embeddings)`
+
+    Variables:
+        - `centers`: Learnable orthonormal cluster centers of shape `(num_clusters, num_embeddings)`.
+
+    Examples:
+        >>> ocread = OCRead(num_clusters=10, num_embeddings=200)
+        >>> x = torch.randn(8, 200, 200)  # Batch of 8, 200 ROIs, 200 embeddings
+        >>> out = ocread(x)
+        >>> print(out.shape)  # Expected output shape: (8, 10, 200)
     """
 
     __constants__ = ["num_clusters", "num_embeddings", "ortho_init"]

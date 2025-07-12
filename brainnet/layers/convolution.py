@@ -15,6 +15,16 @@ class BaseConv(nn.Module):
         bias (bool): Whether to include a bias term. Default: True.
         device (torch.device or str, optional): Device on which to allocate parameters.
         dtype (torch.dtype, optional): Desired data type of the parameters.
+
+    Shape:
+        - Input: `(..., in_channels, spatial_size, spatial_size)` for Edge-to-Edge and Edge-to-Node,
+          `(..., in_channels, spatial_size)` for Node-to-Graph.
+        - Output: `(..., out_channels, spatial_size, spatial_size)` for Edge-to-Edge and Edge-to-Node,
+          `(..., out_channels)` for Node-to-Graph.
+
+    Variables:
+        - `weight`: Learnable weights of shape `(out_channels, in_channels, spatial_size)`.
+        - `bias`: Learnable bias of shape `(out_channels, 1)` if `bias` is `True`, otherwise `None`.
     """
 
     def __init__(self, in_channels, out_channels, spatial_size, bias=True, device=None, dtype=None):
@@ -65,6 +75,18 @@ class BaseConv(nn.Module):
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
+    def forward(self, x):
+        """
+        Forward pass for the convolutional layer.
+
+        Args:
+            x (Tensor): Input tensor of shape (..., in_channels, spatial_size, spatial_size)
+
+        Returns:
+            Tensor: Output tensor of shape (..., out_channels, spatial_size, spatial_size)
+        """
+        raise NotImplementedError("Subclasses must implement the forward method.")
+
 
 class EdgeToEdgeConv(BaseConv):
     r"""
@@ -80,6 +102,22 @@ class EdgeToEdgeConv(BaseConv):
         bias (bool): Whether to include a bias term. Default: True.
         device (torch.device or str, optional): Device on which to allocate parameters.
         dtype (torch.dtype, optional): Desired data type of the parameters.
+
+    Shape:
+        - Input: `(..., in_channels, spatial_size, spatial_size)`
+        - Output: `(..., out_channels, spatial_size, spatial_size)`
+
+    Variables:
+        - `weight_row`: Learnable weights for row-wise projection of shape `(out_channels, in_channels, spatial_size)`.
+        - `weight_col`: Learnable weights for column-wise projection of shape `(out_channels, in_channels, spatial_size)`.
+        - `bias_row`: Learnable bias for row-wise projection of shape `(out_channels, 1)` if `bias` is `True`, otherwise `None`.
+        - `bias_col`: Learnable bias for column-wise projection of shape `(out_channels, 1)` if `bias` is `True`, otherwise `None.
+
+    Examples:
+        >>> conv = EdgeToEdgeConv(in_channels=3, out_channels=5, spatial_size=10)
+        >>> x = torch.randn(8, 3, 10, 10)
+        >>> out = conv(x)
+        >>> print(out.shape)  # Expected output shape: (8, 5, 10, 10)
     """
 
     def init_weight(self, **kwargs):
@@ -137,6 +175,20 @@ class EdgeToNodeConv(BaseConv):
         bias (bool): Whether to include a bias term. Default: True.
         device (torch.device or str, optional): Device on which to allocate parameters.
         dtype (torch.dtype, optional): Desired data type of the parameters.
+
+    Shape:
+        - Input: `(..., in_channels, spatial_size, spatial_size)`
+        - Output: `(..., out_channels, spatial_size)`
+
+    Variables:
+        - `weight`: Learnable weights of shape `(out_channels, in_channels, spatial_size)`.
+        - `bias`: Learnable bias of shape `(out_channels, 1)` if `bias` is `True`, otherwise `None`.
+
+    Examples:
+        >>> conv = EdgeToNodeConv(in_channels=3, out_channels=5, spatial_size=10)
+        >>> x = torch.randn(8, 3, 10, 10)
+        >>> out = conv(x)
+        >>> print(out.shape)  # Expected output shape: (8, 5, 10)
     """
 
     def forward(self, x):
@@ -163,6 +215,20 @@ class NodeToGraphConv(BaseConv):
         bias (bool): Whether to include a bias term. Default: True.
         device (torch.device or str, optional): Device on which to allocate parameters.
         dtype (torch.dtype, optional): Desired data type of the parameters.
+
+    Shape:
+        - Input: `(..., in_channels, spatial_size)`
+        - Output: `(..., out_channels)`
+
+    Variables:
+        - `weight`: Learnable weights of shape `(out_channels, in_channels, spatial_size)`.
+        - `bias`: Learnable bias of shape `(out_channels, 1)` if `bias` is `True`, otherwise `None`.
+
+    Examples:
+        >>> conv = NodeToGraphConv(in_channels=3, out_channels=5, spatial_size=10)
+        >>> x = torch.randn(8, 3, 10)
+        >>> out = conv(x)
+        >>> print(out.shape)  # Expected output shape: (8, 5)
     """
 
     def init_bias(self, bias, **kwargs):
