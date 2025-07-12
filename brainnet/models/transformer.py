@@ -25,29 +25,22 @@ class BrainNetTF(nn.Sequential):
         - As a result, the number of trainable parameters may not match those reported in the original paper.
 
     Args:
-        num_embeddings (int): Input feature dimension per node (typically number of ROIs).
-        num_outputs (int, optional): Number of outputs (e.g., 1 for regression, or C for classification).
-            If `None`, omits the final flatten + linear layers. Default: `None`.
-        num_hidden (int, optional): Hidden dimension used inside the attention layers.
-            If `None`, defaults to `num_embeddings`. Default: `None`.
-        num_heads (int): Number of attention heads per MHA layer. Default: 4.
+        num_embeddings (int): Input feature dimension per node (typically equal to number of ROIs).
+        num_outputs (int, optional): Number of outputs (e.g., 1 for regression or C for classification).
+            If `None`, the final flatten + linear layers are omitted. Default: `None`.
+        num_key (int, optional): Dimension of the key vectors in attention. Defaults to `num_embeddings`.
+        num_value (int, optional): Dimension of the value vectors in attention. Defaults to `num_embeddings`.
+        num_heads (int): Number of attention heads in each MHA layer. Default: 4.
         num_mha (int): Number of stacked MHA layers. Default: 1.
         num_clusters (int): Number of orthonormal clusters used in OCRead. Default: 10.
-        bias (bool): Whether to include bias in linear layers. Default: `True`.
-        device (torch.device, optional): Device on which the model's parameters will be allocated.
-        dtype (torch.dtype, optional): Data type of the parameters.
-
-    Input shape:
-        - x: Tensor of shape `(batch_size, num_nodes, num_embeddings)`
-          (e.g., a functional connectivity matrix where `num_nodes == num_embeddings`)
-
-    Output shape:
-        - Tensor of shape `(batch_size, num_outputs)`
+        bias (bool): Whether to include bias terms in linear layers. Default: `True`.
+        device (torch.device, optional): Device to initialize model parameters on.
+        dtype (torch.dtype, optional): Data type for model parameters.
 
     Example:
         >>> model = BrainNetTF(num_embeddings=200, num_outputs=1)
         >>> x = torch.randn(8, 200, 200)
-        >>> x = (x + x.mT) / 2  # Symmetrize the input
+        >>> x = (x + x.mT) / 2  # Symmetrize the input if needed
         >>> out = model(x)
         >>> print(out.shape)  # torch.Size([8, 1])
     """
@@ -56,7 +49,8 @@ class BrainNetTF(nn.Sequential):
         self,
         num_embeddings,
         num_outputs=None,
-        num_hidden=None,
+        num_key=None,
+        num_value=None,
         num_heads=4,
         num_mha=1,
         num_clusters=10,
@@ -67,13 +61,14 @@ class BrainNetTF(nn.Sequential):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
 
-        num_hidden = num_hidden or num_embeddings
+        num_key = num_key or num_embeddings
+        num_value = num_value or num_embeddings
 
         # Add stacked multi-head attention layers
         for i in range(num_mha):
             self.add_module(
                 f"mha_{i:0=2d}",
-                MultiHeadAttention(num_embeddings, num_hidden, num_hidden, num_heads, bias, **factory_kwargs),
+                MultiHeadAttention(num_embeddings, num_key, num_value, num_heads, bias, **factory_kwargs),
             )
 
         # Add OCRead for cluster-based pooling
