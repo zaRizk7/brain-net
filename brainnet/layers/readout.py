@@ -30,6 +30,13 @@ class OCRead(nn.Module):
         - Output: `(batch_size, num_clusters, num_embeddings)`
     """
 
+    __constants__ = ["num_clusters", "num_embeddings", "ortho_init"]
+    num_clusters: int
+    num_embeddings: int
+    ortho_init: bool
+    centers: torch.Tensor
+    softmax: nn.Softmax
+
     def __init__(self, num_clusters, num_embeddings, ortho_init=True, device=None, dtype=None):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()

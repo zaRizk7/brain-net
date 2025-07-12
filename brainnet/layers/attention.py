@@ -15,6 +15,9 @@ class Attention(nn.Module):
         mask (bool): Whether to apply causal (upper-triangular) masking to the attention scores.
     """
 
+    __constants__ = ["mask"]
+    mask: bool
+
     def __init__(self, mask=False):
         super().__init__()
         self.softmax = nn.Softmax(dim=-1)
