@@ -25,6 +25,13 @@ class BaseConv(nn.Module):
         self.init_parameters(bias, **factory_kwargs)
         self.reset_parameters()
 
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(in_channels={self.in_channels}, "
+            f"out_channels={self.out_channels}, spatial_size={self.spatial_size}, "
+            f"bias={self.bias is not None})"
+        )
+
     def init_weight(self, **kwargs):
         """
         Initialize the weight tensor with shape:
@@ -76,6 +83,13 @@ class EdgeToEdgeConv(BaseConv):
     def init_weight(self, **kwargs):
         self.weight_row = nn.Parameter(torch.empty(self.out_channels, self.in_channels, self.spatial_size, **kwargs))
         self.weight_col = nn.Parameter(self.weight_row.data.clone())
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(in_channels={self.in_channels}, "
+            f"out_channels={self.out_channels}, spatial_size={self.spatial_size}, "
+            f"bias={self.bias_row is not None})"
+        )
 
     def init_bias(self, bias, **kwargs):
         if bias:
