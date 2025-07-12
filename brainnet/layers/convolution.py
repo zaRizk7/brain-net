@@ -157,10 +157,15 @@ class EdgeToEdgeConv(BaseConv):
         bias_row = self.bias_row if self.bias_row is not None else 0
         bias_col = self.bias_col if self.bias_col is not None else 0
 
+        # Column-wise pooling to obtain row-wise features
         z_row = torch.einsum("...cij,dcj->...di", x, self.weight_row) + bias_row
+        # Row-wise pooling to obtain column-wise features
         z_col = torch.einsum("...cij,dci->...dj", x, self.weight_col) + bias_col
 
-        return z_row[..., None, :] + z_col[..., :, None]
+        # Broadcast and add the row and column features
+        # Add extra dimension to last dim for row
+        # and second last dim for column to enable broadcasting
+        return z_row[..., :, None] + z_col[..., None, :]
 
 
 class EdgeToNodeConv(BaseConv):
