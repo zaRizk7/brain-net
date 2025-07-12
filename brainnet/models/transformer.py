@@ -25,13 +25,14 @@ class BrainNetTF(nn.Sequential):
 
     Args:
         num_embeddings (int): Input feature dimension per node (typically number of ROIs).
-        num_outputs (int): Number of outputs (e.g., 1 for regression, or C for classification).
+        num_outputs (int, optional): Number of outputs (e.g., 1 for regression, or C for classification).
+            If `None`, omits the final flatten + linear layers. Default: `None`.
         num_hidden (int, optional): Hidden dimension used inside the attention layers.
-            If `None`, defaults to `num_embeddings`.
+            If `None`, defaults to `num_embeddings`. Default: `None`.
         num_heads (int): Number of attention heads per MHA layer. Default: 4.
         num_mha (int): Number of stacked MHA layers. Default: 1.
         num_clusters (int): Number of orthonormal clusters used in OCRead. Default: 10.
-        bias (bool): Whether to include bias in linear layers. Default: True.
+        bias (bool): Whether to include bias in linear layers. Default: `True`.
         device (torch.device, optional): Device on which the model's parameters will be allocated.
         dtype (torch.dtype, optional): Data type of the parameters.
 
