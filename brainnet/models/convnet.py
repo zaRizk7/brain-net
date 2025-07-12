@@ -28,6 +28,12 @@ class BrainNetCNN(nn.Sequential):
         negative_slope (float): Negative slope for LeakyReLU activations. Default: 0.33.
         device (torch.device, optional): Device to initialize model parameters on.
         dtype (torch.dtype, optional): Data type for model parameters.
+
+    Examples:
+        >>> model = BrainNetCNN([1, 32, 64, 128, 256], spatial_size=200, num_outputs=2)
+        >>> x = torch.randn(8, 1, 200, 200)  # Batch of 8, 1 channel, 200x200 connectivity matrices
+        >>> out = model(x)
+        >>> print(out.shape)  # Expected output shape: (8, 2) if num_outputs=2
     """
 
     def __init__(

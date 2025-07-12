@@ -37,7 +37,7 @@ class BrainNetTF(nn.Sequential):
         device (torch.device, optional): Device to initialize model parameters on.
         dtype (torch.dtype, optional): Data type for model parameters.
 
-    Example:
+    Examples:
         >>> model = BrainNetTF(num_embeddings=200, num_outputs=1)
         >>> x = torch.randn(8, 200, 200)
         >>> x = (x + x.mT) / 2  # Symmetrize the input if needed
