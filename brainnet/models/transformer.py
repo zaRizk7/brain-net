@@ -33,6 +33,9 @@ class BrainNetTF(nn.Sequential):
         num_heads (int): Number of attention heads in each MHA layer. Default: 4.
         num_mha (int): Number of stacked MHA layers. Default: 1.
         num_clusters (int): Number of orthonormal clusters used in OCRead. Default: 10.
+        ortho_init_clusters (bool): If `True`, initializes cluster centers using Gram-Schmidt orthonormalization.
+            Default: `True`.
+        learnable_clusters (bool): If `True`, the cluster centers are learnable parameters. Default: `True`.
         bias (bool): Whether to include bias terms in linear layers. Default: `True`.
         device (torch.device, optional): Device to initialize model parameters on.
         dtype (torch.dtype, optional): Data type for model parameters.
@@ -54,6 +57,8 @@ class BrainNetTF(nn.Sequential):
         num_heads=4,
         num_mha=1,
         num_clusters=10,
+        ortho_init_clusters=True,
+        learnable_clusters=True,
         bias=True,
         device=None,
         dtype=None,
@@ -72,7 +77,9 @@ class BrainNetTF(nn.Sequential):
             )
 
         # Add OCRead for cluster-based pooling
-        self.add_module("readout", OCRead(num_clusters, num_embeddings, **factory_kwargs))
+        self.add_module(
+            "readout", OCRead(num_clusters, num_embeddings, ortho_init_clusters, learnable_clusters, **factory_kwargs)
+        )
 
         if num_outputs is not None:
             # Final classification layer
