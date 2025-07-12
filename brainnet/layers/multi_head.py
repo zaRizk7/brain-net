@@ -154,7 +154,6 @@ class MultiHeadAttention(nn.Module):
         d_model (int): Input feature dimensionality.
         d_k (int): Dimension of the query/key vectors.
         d_v (int): Dimension of the value vectors.
-        d_o (int): Output dimensionality after concatenation.
         num_heads (int): Number of attention heads. Default: 1
         bias (bool): Whether to include bias in linear projections. Default: `True`
         mask (bool): Whether to apply causal masking in attention. Default: `False`
@@ -166,13 +165,13 @@ class MultiHeadAttention(nn.Module):
         - Output: `(..., d_o)`
     """
 
-    def __init__(self, d_model, d_k, d_v, d_o, num_heads=1, bias=True, mask=False, device=None, dtype=None):
+    def __init__(self, d_model, d_k, d_v, num_heads=1, bias=True, mask=False, device=None, dtype=None):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
         self.linear_q = MultiHeadLinear(d_model, d_k, num_heads, bias, **factory_kwargs)
         self.linear_k = MultiHeadLinear(d_model, d_k, num_heads, bias, **factory_kwargs)
         self.linear_v = MultiHeadLinear(d_model, d_v, num_heads, bias, **factory_kwargs)
-        self.linear_o = ConcatLinear(d_v, d_o, num_heads, bias, **factory_kwargs)
+        self.linear_o = ConcatLinear(d_v, d_model, num_heads, bias, **factory_kwargs)
         self.attention = Attention(mask)
 
     def forward(self, x):

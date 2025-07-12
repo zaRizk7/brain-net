@@ -75,7 +75,6 @@ class BrainNetTF(nn.Sequential):
                     d_model=num_embeddings,
                     d_k=num_hidden,
                     d_v=num_hidden,
-                    d_o=num_embeddings,
                     num_heads=num_heads,
                     bias=bias,
                     **factory_kwargs,
@@ -90,3 +89,16 @@ class BrainNetTF(nn.Sequential):
 
         # Final classification layer
         self.add_module("linear", nn.Linear(num_clusters * num_embeddings, num_classes, bias=bias, **factory_kwargs))
+
+
+# Test the forward pass
+if __name__ == "__main__":
+    import torch
+
+    model = BrainNetTF(num_embeddings=200, num_classes=1, num_hidden=1024, num_mha=2, num_heads=4, num_clusters=10)
+    x = torch.randn(2, 200, 200)  # Example input with batch size 2 and 200 ROIs
+    x = (x + x.mT) / 2  # Ensure symmetric input
+    output = model(x)
+    print(output.shape)  # Should be (2, 10, 200) for
+    print(sum(p.numel() for p in model.parameters() if p.requires_grad))
+    print(model)
