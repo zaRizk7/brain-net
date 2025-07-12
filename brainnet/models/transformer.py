@@ -1,6 +1,6 @@
 from torch import nn
 
-from ..layers import MultiHeadAttention, OCRead
+from ..layers import ConcatLinear, MultiHeadAttention, OCRead
 
 __all__ = ["BrainNetTF"]
 
@@ -80,8 +80,5 @@ class BrainNetTF(nn.Sequential):
         self.add_module("readout", OCRead(num_clusters, num_embeddings, **factory_kwargs))
 
         if num_outputs is not None:
-            # Flatten cluster-wise features into a single vector
-            self.add_module("flatten", nn.Flatten(-2, -1))
-
             # Final classification layer
-            self.add_module("linear", nn.Linear(num_clusters * num_embeddings, num_outputs, bias, **factory_kwargs))
+            self.add_module("linear", ConcatLinear(num_embeddings, num_outputs, num_clusters, bias, **factory_kwargs))
