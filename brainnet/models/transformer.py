@@ -25,7 +25,7 @@ class BrainNetTF(nn.Sequential):
 
     Args:
         num_embeddings (int): Input feature dimension per node (typically number of ROIs).
-        num_classes (int): Number of output classes (e.g., 1 for regression, or C for classification).
+        num_outputs (int): Number of outputs (e.g., 1 for regression, or C for classification).
         num_hidden (int, optional): Hidden dimension used inside the attention layers.
             If `None`, defaults to `num_embeddings`.
         num_heads (int): Number of attention heads per MHA layer. Default: 4.
@@ -40,10 +40,10 @@ class BrainNetTF(nn.Sequential):
           (e.g., a functional connectivity matrix where `num_nodes == num_embeddings`)
 
     Output shape:
-        - Tensor of shape `(batch_size, num_classes)`
+        - Tensor of shape `(batch_size, num_outputs)`
 
     Example:
-        >>> model = BrainNetTF(num_embeddings=200, num_classes=1)
+        >>> model = BrainNetTF(num_embeddings=200, num_outputs=1)
         >>> x = torch.randn(8, 200, 200)
         >>> x = (x + x.mT) / 2  # Symmetrize the input
         >>> out = model(x)
@@ -53,7 +53,7 @@ class BrainNetTF(nn.Sequential):
     def __init__(
         self,
         num_embeddings,
-        num_classes,
+        num_outputs=None,
         num_hidden=None,
         num_heads=4,
         num_mha=1,
@@ -77,8 +77,9 @@ class BrainNetTF(nn.Sequential):
         # Add OCRead for cluster-based pooling
         self.add_module("readout", OCRead(num_clusters, num_embeddings, **factory_kwargs))
 
-        # Flatten cluster-wise features into a single vector
-        self.add_module("flatten", nn.Flatten(start_dim=-2, end_dim=-1))
+        if num_outputs is not None:
+            # Flatten cluster-wise features into a single vector
+            self.add_module("flatten", nn.Flatten(start_dim=-2, end_dim=-1))
 
-        # Final classification layer
-        self.add_module("linear", nn.Linear(num_clusters * num_embeddings, num_classes, bias, **factory_kwargs))
+            # Final classification layer
+            self.add_module("linear", nn.Linear(num_clusters * num_embeddings, num_outputs, bias, **factory_kwargs))
