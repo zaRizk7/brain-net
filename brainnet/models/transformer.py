@@ -71,14 +71,7 @@ class BrainNetTF(nn.Sequential):
         for i in range(num_mha):
             self.add_module(
                 f"mha_{i:0=2d}",
-                MultiHeadAttention(
-                    d_model=num_embeddings,
-                    d_k=num_hidden,
-                    d_v=num_hidden,
-                    num_heads=num_heads,
-                    bias=bias,
-                    **factory_kwargs,
-                ),
+                MultiHeadAttention(num_embeddings, num_hidden, num_hidden, num_heads, bias, **factory_kwargs),
             )
 
         # Add OCRead for cluster-based pooling
@@ -88,4 +81,4 @@ class BrainNetTF(nn.Sequential):
         self.add_module("flatten", nn.Flatten(start_dim=-2, end_dim=-1))
 
         # Final classification layer
-        self.add_module("linear", nn.Linear(num_clusters * num_embeddings, num_classes, bias=bias, **factory_kwargs))
+        self.add_module("linear", nn.Linear(num_clusters * num_embeddings, num_classes, bias, **factory_kwargs))
