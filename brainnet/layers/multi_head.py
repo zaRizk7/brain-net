@@ -81,7 +81,7 @@ class MultiHeadLinear(nn.Module):
 
 class ConcatLinear(MultiHeadLinear):
     r"""
-    Applies multiple independent linear transformations (one per head), then concatenates the results.
+    Aggregate inputs from multiple heads then apply linear transformation.
 
     Compared to `MultiHeadLinear`, this class concatenates the inputs first before applying linear
     transformation.
