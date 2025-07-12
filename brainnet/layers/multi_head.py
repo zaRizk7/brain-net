@@ -10,10 +10,6 @@ class MultiHeadLinear(nn.Module):
     r"""
     Applies multiple independent linear transformations (one per head) to the last input dimension.
 
-    Each head learns a separate linear projection:
-    - input shape: `(..., num_inputs)`
-    - output shape: `(..., num_heads, num_outputs)`
-
     Args:
         num_inputs (int): Size of each input sample.
         num_outputs (int): Size of each output sample.
@@ -21,10 +17,6 @@ class MultiHeadLinear(nn.Module):
         bias (bool): If set to `False`, the layer will not learn an additive bias. Default: `True`
         device (torch.device, optional): The device for the parameters.
         dtype (torch.dtype, optional): The data type for the parameters.
-
-    Shape:
-        - Input: `(..., num_inputs)`
-        - Output: `(..., num_heads, num_outputs)`
     """
 
     __constants__ = ["num_inputs", "num_outputs", "num_heads"]
@@ -94,9 +86,13 @@ class ConcatLinear(MultiHeadLinear):
     Compared to `MultiHeadLinear`, this class concatenates the inputs first before applying linear
     transformation.
 
-    Shape:
-        - Input: `(..., num_heads, num_inputs)`
-        - Output: `(..., num_outputs)`
+    Args:
+        num_inputs (int): Size of each input sample.
+        num_outputs (int): Size of each output sample.
+        num_heads (int): Number of independent projection heads. Default: 1
+        bias (bool): If set to `False`, the layer will not learn an additive bias. Default: `True`
+        device (torch.device, optional): The device for the parameters.
+        dtype (torch.dtype, optional): The data type for the parameters.
     """
 
     def __repr__(self):
@@ -159,10 +155,6 @@ class MultiHeadAttention(nn.Module):
         mask (bool): Whether to apply causal masking in attention. Default: `False`
         device (torch.device, optional): The device for the parameters.
         dtype (torch.dtype, optional): The data type for the parameters.
-
-    Shape:
-        - Input: `(..., d_model)`
-        - Output: `(..., d_o)`
     """
 
     def __init__(self, d_model, d_k, d_v, num_heads=1, bias=True, mask=False, device=None, dtype=None):
