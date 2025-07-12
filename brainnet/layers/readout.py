@@ -22,6 +22,7 @@ class OCRead(nn.Module):
         num_embeddings (int): Dimension of the input embeddings (e.g., number of ROIs).
         ortho_init (bool): If True, use Gram-Schmidt orthonormalization when initializing
             the cluster centers to ensure they are orthonormal. Default: True.
+        learnable (bool): If True, the cluster centers are learnable parameters. Default: True.
         device (torch.device, optional): Device for parameters.
         dtype (torch.dtype, optional): Data type for parameters.
 
@@ -46,7 +47,7 @@ class OCRead(nn.Module):
     centers: torch.Tensor
     softmax: nn.Softmax
 
-    def __init__(self, num_clusters, num_embeddings, ortho_init=True, device=None, dtype=None):
+    def __init__(self, num_clusters, num_embeddings, ortho_init=True, learnable=True, device=None, dtype=None):
         factory_kwargs = {"device": device, "dtype": dtype}
         super().__init__()
         self.num_clusters = num_clusters
@@ -54,7 +55,7 @@ class OCRead(nn.Module):
         self.ortho_init = ortho_init
 
         # Learnable orthonormal cluster centers (num_clusters x num_embeddings)
-        self.centers = nn.Parameter(torch.empty(num_clusters, num_embeddings, **factory_kwargs))
+        self.centers = nn.Parameter(torch.empty(num_clusters, num_embeddings, **factory_kwargs), learnable)
 
         # Softmax over similarity scores
         self.softmax = nn.Softmax(dim=-1)
@@ -62,7 +63,12 @@ class OCRead(nn.Module):
         self.reset_parameters()
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(num_clusters={self.num_clusters}, num_embeddings={self.num_embeddings})"
+        return (
+            f"{self.__class__.__name__}(num_clusters={self.num_clusters}, "
+            f"num_embeddings={self.num_embeddings}, "
+            f"ortho_init={self.ortho_init}, "
+            f"learnable={self.centers.requires_grad})"
+        )
 
     def reset_parameters(self):
         r"""
