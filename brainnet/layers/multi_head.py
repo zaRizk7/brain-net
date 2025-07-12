@@ -170,9 +170,11 @@ class MultiHeadAttention(nn.Module):
         """
         Args:
             x (Tensor): Input tensor of shape `(..., d_model)`
+            return_attention (bool): If `True`, also return attention weights. Default: `False`.
 
         Returns:
             Tensor: Output tensor of shape `(..., d_o)`
+            Tensor (optional): Attention weights of shape `(..., num_heads, seq_len, seq_len)` if `return_attention` is `True`.
         """
         q, k, v = self.linear_q(x), self.linear_k(x), self.linear_v(x)
 
