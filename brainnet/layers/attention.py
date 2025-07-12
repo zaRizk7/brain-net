@@ -23,13 +23,11 @@ class Attention(nn.Module):
     def __repr__(self):
         return f"{self.__class__.__name__}(mask={self.mask})"
 
-    def forward(self, qkv, return_attention=False):
+    def forward(self, qkv):
         r"""
         Args:
             qkv (tuple of Tensor): Tuple of (Q, K, V), each with shape
                 (batch_size, num_heads, seq_len, dim)
-
-        return_attention (bool): If True, returns the attention weights along with the output.
 
         Returns:
             Tensor: Output of attention, shape (batch_size, num_heads, seq_len, dim)
@@ -49,4 +47,4 @@ class Attention(nn.Module):
         # Apply softmax and attend to values
         attn = self.softmax(scores)
         z = torch.matmul(attn, v)
-        return (z, attn) if return_attention else z
+        return z, attn

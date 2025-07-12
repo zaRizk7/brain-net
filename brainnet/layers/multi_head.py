@@ -174,7 +174,7 @@ class MultiHeadAttention(nn.Module):
         self.linear_o = ConcatLinear(d_v, d_model, num_heads, bias, **factory_kwargs)
         self.attention = Attention(mask)
 
-    def forward(self, x):
+    def forward(self, x, return_attention=False):
         """
         Args:
             x (Tensor): Input tensor of shape `(..., d_model)`
@@ -183,5 +183,10 @@ class MultiHeadAttention(nn.Module):
             Tensor: Output tensor of shape `(..., d_o)`
         """
         q, k, v = self.linear_q(x), self.linear_k(x), self.linear_v(x)
-        a = self.attention((q, k, v))
-        return self.linear_o(a)
+
+        z, attn = self.attention((q, k, v))
+        z = self.linear_o(z)
+
+        if not return_attention:
+            return z
+        return z, attn
