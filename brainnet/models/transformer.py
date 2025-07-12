@@ -10,7 +10,8 @@ class BrainNetTF(nn.Sequential):
     Brain Network Transformer (BrainNetTF) model.
 
     This is a faithful PyTorch implementation of the architecture described in the
-    BrainNetTF paper, with necessary clarifications and minimal modifications for reproducibility.
+    BrainNetTF paper, with necessary clarifications and minimal implementation for reproducibility
+    and understanding of the method.
 
     The model consists of:
         - A stack of Multi-Head Attention (MHA) layers to model pairwise relationships between ROIs
