@@ -6,7 +6,7 @@ authors = [{ name = "Riza Rizky", email = "zarizky77@gmail.com" }]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["torch==2.7.0"]
+dependencies = ["torch>=2.7.0"]
 
 [project.optional-dependencies]
 dev = [
