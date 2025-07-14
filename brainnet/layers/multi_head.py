@@ -208,21 +208,30 @@ class MultiHeadAttention(nn.Module):
         self.linear_o = ConcatLinear(d_v, d_model, num_heads, bias, **factory_kwargs)
         self.attention = Attention(mask)
 
-    def forward(self, x, return_attention=False):
+    def forward(self, x, z=None, return_attention=False):
         """
         Args:
             x (Tensor): Input tensor of shape `(..., d_model)`
+            z (Tensor, optional): Optional tensor for cross-attention. If provided,
+                it should have the same last dimension as `x`. Default: `None`.
             return_attention (bool): If `True`, also return attention weights. Default: `False`.
 
         Returns:
             Tensor: Output tensor of shape `(..., d_o)`
             Tensor (optional): Attention weights of shape `(..., num_heads, seq_len, seq_len)` if `return_attention` is `True`.
         """
-        q, k, v = self.linear_q(x), self.linear_k(x), self.linear_v(x)
+        z = x if z is None else z
+        # Apply multi-head linear projections
+        # Shape: (batch_size, seq_len, num_heads, d_k) for Q
+        # Shape: (batch_size, seq_len, num_heads, d_k) for K
+        # Shape: (batch_size, seq_len, num_heads, d_v) for V
+        q, k, v = self.linear_q(x), self.linear_k(z), self.linear_v(z)
+        # Transpose to get shape (batch_size, num_heads, seq_len, dim)
+        q, k, v = q.transpose(-3, -2), k.transpose(-3, -2), v.transpose(-3, -2)
 
         z, attn = self.attention((q, k, v))
-        z = self.linear_o(z)
+        # Apply aggregation and linear projection
+        # Shape: (batch_size, seq_len, num_heads, d_v) -> (batch_size, seq_len, d_model)
+        z = self.linear_o(z.transpose(-3, -2))
 
-        if not return_attention:
-            return z
-        return z, attn
+        return (z, attn) if return_attention else z

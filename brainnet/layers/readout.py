@@ -122,6 +122,4 @@ class OCRead(nn.Module):
         # Output:      (batch_size, num_clusters, num_embeddings)
         z = torch.matmul(p.mT, x)
 
-        if not return_assignments:
-            return z
-        return z, p
+        return (z, p) if return_assignments else z

@@ -15,17 +15,17 @@ class Attention(nn.Module):
         mask (bool): Whether to apply causal (upper-triangular) masking to the attention scores.
 
     Shape:
-        - Input: `(batch_size, seq_len, num_heads, dim)` for Q, K, V
-        - Output: `(batch_size, seq_len, num_heads, dim)`
-        - Attention weights: `(batch_size, num_heads, seq_len, seq_len)`
+        - Input: `(..., seq_len, dim)` for Q, K, V
+        - Output: `(..., seq_len, dim)`
+        - Attention weights: `(..., seq_len, seq_len)`
 
     Example:
         >>> attn = Attention(mask=True)
-        >>> q = torch.randn(2, 10, 4, 64)  # Batch of 2, seq_len=10, num_heads=4, dim=64
-        >>> k = torch.randn(2, 10, 4, 64)
-        >>> v = torch.randn(2, 10, 4, 64)
+        >>> q = torch.randn(2, 4, 10, 64)  # Batch of 2, num_heads=4, seq_len=10, dim=64
+        >>> k = torch.randn(2, 4, 10, 64)
+        >>> v = torch.randn(2, 4, 10, 64)
         >>> output, attn_weights = attn((q, k, v))
-        >>> print(output.shape)  # Expected: (2, 10, 4, 64)
+        >>> print(output.shape)  # Expected: (2, 4, 10, 64)
         >>> print(attn_weights.shape)  # Expected: (2, 4, 10, 10)
     """
 
@@ -44,17 +44,14 @@ class Attention(nn.Module):
         r"""
         Args:
             qkv (tuple of Tensor): Tuple of (Q, K, V), each with shape
-                (batch_size, seq_len, num_heads, dim)
+                (..., seq_len, dim)
 
         Returns:
-            Tensor: Output tensor of shape (batch_size, seq_len, num_heads, dim)
-            Tensor: Attention weights of shape (batch_size, num_heads, seq_len, seq_len)
+            Tensor: Output tensor of shape (..., seq_len, dim)
+            Tensor: Attention weights of shape (..., seq_len, seq_len)
         """
         q, k, v = qkv
         d_k = k.size(-1)
-
-        # Transpose to get shape (batch_size, num_heads, seq_len, dim)
-        q, k, v = q.transpose(-3, -2), k.transpose(-3, -2), v.transpose(-3, -2)
 
         # Compute scaled attention scores
         scores = torch.matmul(q, k.mT) / (d_k**0.5)
@@ -67,6 +64,6 @@ class Attention(nn.Module):
 
         # Apply softmax and attend to values, reshape back to original shape
         attn = self.softmax(scores)
-        z = torch.matmul(attn, v).transpose(-3, -2)
+        z = torch.matmul(attn, v)
 
         return z, attn
