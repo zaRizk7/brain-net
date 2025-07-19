@@ -177,61 +177,79 @@ class MultiHeadAttention(nn.Module):
     applies attention, and combines the heads using `ConcatLinear`.
 
     Args:
-        d_model (int): Input feature dimensionality.
-        d_k (int): Dimension of the query/key vectors.
-        d_v (int): Dimension of the value vectors.
+        num_inputs (int): Input feature dimensionality.
         num_heads (int): Number of attention heads. Default: 1
+        num_keys (int): Dimension of the query/key vectors. If `None`, defaults to `num_inputs // num_heads`. Default: `None`.
+        num_values (int): Dimension of the value vectors. If `None`, defaults to `num_inputs // num_heads`. Default: `None`.
+        num_outputs (int, optional): Output dimension after concatenation. If `None`, defaults to `num_inputs`. Default: `None`.
         bias (bool): Whether to include bias in linear projections. Default: `True`
-        mask (bool): Whether to apply causal masking in attention. Default: `False`
         device (torch.device, optional): The device for the parameters.
         dtype (torch.dtype, optional): The data type for the parameters.
 
     Shape:
-        - Input: `(..., seq_len, d_model)`
-        - Output: `(..., seq_len, d_model)`
+        - Input: `(..., seq_len, num_inputs)`
+        - Output: `(..., seq_len, num_inputs)`
         - Attention weights: `(..., num_heads, seq_len, seq_len)` if `return_attention=True`
 
     Examples:
-        >>> mha = MultiHeadAttention(d_model=512, d_k=64, d_v=64, num_heads=8)
+        >>> mha = MultiHeadAttention(num_inputs=512, num_keys=64, num_values=64, num_heads=8)
         >>> x = torch.randn(10, 20, 512)  # Batch of 10, sequence length of 20, feature size of 512
         >>> output, attn_weights = mha(x, return_attention=True)
         >>> print(output.shape)  # Expected: (10, 20, 512)
         >>> print(attn_weights.shape)  # Expected: (10, 8, 20, 20)
     """
 
-    def __init__(self, d_model, d_k, d_v, num_heads=1, bias=True, mask=False, device=None, dtype=None):
+    def __init__(
+        self,
+        num_inputs,
+        num_heads=1,
+        num_keys=None,
+        num_values=None,
+        num_outputs=None,
+        bias=True,
+        device=None,
+        dtype=None,
+    ):
         factory_kwargs = {"device": device, "dtype": dtype}
+        num_outputs = num_outputs or num_inputs
+        num_keys = num_keys or num_inputs // num_heads
+        num_values = num_values or num_inputs // num_heads
         super().__init__()
-        self.linear_q = MultiHeadLinear(d_model, d_k, num_heads, bias, **factory_kwargs)
-        self.linear_k = MultiHeadLinear(d_model, d_k, num_heads, bias, **factory_kwargs)
-        self.linear_v = MultiHeadLinear(d_model, d_v, num_heads, bias, **factory_kwargs)
-        self.linear_o = ConcatLinear(d_v, d_model, num_heads, bias, **factory_kwargs)
-        self.attention = Attention(mask)
+        self.linear_q = MultiHeadLinear(num_inputs, num_keys, num_heads, bias, **factory_kwargs)
+        self.linear_k = MultiHeadLinear(num_inputs, num_keys, num_heads, bias, **factory_kwargs)
+        self.linear_v = MultiHeadLinear(num_inputs, num_values, num_heads, bias, **factory_kwargs)
+        self.linear_o = ConcatLinear(num_values, num_outputs, num_heads, bias, **factory_kwargs)
+        self.attention = Attention()
 
-    def forward(self, x, z=None, return_attention=False):
+    def forward(self, x, z=None, return_attention=False, mask=None, causal_mask=False):
         """
         Args:
-            x (Tensor): Input tensor of shape `(..., d_model)`
+            x (Tensor): Input tensor of shape `(..., num_inputs)`
             z (Tensor, optional): Optional tensor for cross-attention. If provided,
                 it should have the same last dimension as `x`. Default: `None`.
             return_attention (bool): If `True`, also return attention weights. Default: `False`.
+            mask (Tensor, optional): Optional mask tensor to apply to attention scores.
+                If `None`, no mask is applied. Default: `None`.
+            causal_mask (bool): If `True`, applies a causal mask to prevent attending to future positions.
+                Overrides the `mask` argument if set to `True`. Default: `False`.
 
         Returns:
-            Tensor: Output tensor of shape `(..., d_o)`
+            Tensor: Output tensor of shape `(..., seq_len, num_outputs)`
             Tensor (optional): Attention weights of shape `(..., num_heads, seq_len, seq_len)` if `return_attention` is `True`.
         """
         z = x if z is None else z
         # Apply multi-head linear projections
-        # Shape: (batch_size, seq_len, num_heads, d_k) for Q
-        # Shape: (batch_size, seq_len, num_heads, d_k) for K
-        # Shape: (batch_size, seq_len, num_heads, d_v) for V
+        # Shape: (batch_size, seq_len, num_heads, num_keys) for Q
+        # Shape: (batch_size, seq_len, num_heads, num_keys) for K
+        # Shape: (batch_size, seq_len, num_heads, num_values) for V
         q, k, v = self.linear_q(x), self.linear_k(z), self.linear_v(z)
         # Transpose to get shape (batch_size, num_heads, seq_len, dim)
         q, k, v = q.transpose(-3, -2), k.transpose(-3, -2), v.transpose(-3, -2)
 
-        z, attn = self.attention((q, k, v))
+        z, attn = self.attention((q, k, v), mask, causal_mask)
         # Apply aggregation and linear projection
-        # Shape: (batch_size, seq_len, num_heads, d_v) -> (batch_size, seq_len, d_model)
+        # Input shape: (batch_size, seq_len, num_heads, num_values)
+        # Output shape: -> (batch_size, seq_len, num_inputs)
         z = self.linear_o(z.transpose(-3, -2))
 
         return (z, attn) if return_attention else z
