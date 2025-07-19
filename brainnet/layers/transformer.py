@@ -1,9 +1,3 @@
-"""
-This module provides a configurable Transformer encoder block suitable for use in neural network architectures.
-It implements a standard encoder layer consisting of multi-head attention, feedforward layers, normalization,
-and optional dropout, suitable for sequence modeling tasks.
-"""
-
 from torch import nn
 
 from .multi_head import MultiHeadAttention
