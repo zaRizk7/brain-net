@@ -8,16 +8,16 @@ class Attention(nn.Module):
     r"""
     Scaled dot-product attention with optional causal masking.
 
-    This implements:
-        Attention(Q, K, V) = Softmax(QK^T / sqrt(d_k) + mask) @ V
+    This module computes the scaled dot-product attention, optionally applying a causal mask to prevent
+    attending to future positions.
 
     Args:
-        mask (bool): Whether to apply causal (upper-triangular) masking to the attention scores.
+        activation (nn.Module, optional): Activation function to apply to attention scores. Defaults: `nn.Softmax(dim=-1)`.
 
     Shape:
-        - Input: `(..., seq_len, dim)` for Q, K, V
-        - Output: `(..., seq_len, dim)`
-        - Attention weights: `(..., seq_len, seq_len)`
+        - Inputs: Tuple of (Q, K, V), each with shape (..., seq_len, dim)
+        - Output: Tensor of shape (..., seq_len, dim)
+        - Attention weights: Tensor of shape (..., seq_len, seq_len)
 
     Example:
         >>> attn = Attention(mask=True)
@@ -29,26 +29,26 @@ class Attention(nn.Module):
         >>> print(attn_weights.shape)  # Expected: (2, 4, 10, 10)
     """
 
-    __constants__ = ["mask"]
-    mask: bool
-
-    def __init__(self, mask=False):
+    def __init__(self, activation=None):
         super().__init__()
-        self.softmax = nn.Softmax(dim=-1)
-        self.mask = mask
+        self.activation = activation or nn.Softmax(dim=-1)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(mask={self.mask})"
+        return f"{self.__class__.__name__}(activation={self.activation})"
 
-    def forward(self, qkv):
+    def forward(self, qkv, mask=None, causal_mask=False):
         r"""
         Args:
-            qkv (tuple of Tensor): Tuple of (Q, K, V), each with shape
-                (..., seq_len, dim)
+            qkv (tuple of torch.Tensor): Tuple containing query, key, and value tensors, each of shape
+                (..., seq_len, dim).
+            mask (torch.Tensor, optional): Optional mask tensor of shape (..., seq_len, seq_len) to apply to the
+                attention scores.
+            causal_mask (bool, optional): If True, applies a causal mask to prevent attending to future positions.
+                Overrides the `mask` argument if set to True.
 
         Returns:
-            Tensor: Output tensor of shape (..., seq_len, dim)
-            Tensor: Attention weights of shape (..., seq_len, seq_len)
+            torch.Tensor: Output tensor after attention of shape (..., seq_len, dim).
+            torch.Tensor: Attention weights of shape (..., seq_len, seq_len).
         """
         q, k, v = qkv
         d_k = k.size(-1)
@@ -57,13 +57,15 @@ class Attention(nn.Module):
         scores = torch.matmul(q, k.mT) / (d_k**0.5)
 
         # Apply causal mask if enabled (assuming q and k have same seq_len)
-        if self.mask:
+        if causal_mask:
             seq_len = q.size(-2)
             mask = torch.triu(torch.ones(seq_len, seq_len, device=q.device), diagonal=1)
             scores = scores + mask * float("-inf")
+        elif mask:
+            scores = scores * mask
 
-        # Apply softmax and attend to values, reshape back to original shape
-        attn = self.softmax(scores)
+        # Apply softmax and attend to values
+        attn = self.activation(scores)
         z = torch.matmul(attn, v)
 
         return z, attn
