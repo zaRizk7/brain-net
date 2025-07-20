@@ -49,7 +49,13 @@ class Residual(nn.Module):
     def __repr__(self):
         # Custom string representation to show module, dropout, and interaction type
         p_dropout = self.dropout.p if isinstance(self.dropout, nn.Dropout) else None
-        return f"{self.__class__.__name__}(module={self.module}, p_dropout={p_dropout}, interaction={self.interaction})"
+        return (
+            f"{self.__class__.__name__}(\n"
+            f"   module={self.module},\n"
+            f"   p_dropout={p_dropout},\n"
+            f"   interaction={self.interaction}\n"
+            f")"
+        )
 
     def forward(self, x, *args, **kwargs):
         """
