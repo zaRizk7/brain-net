@@ -53,7 +53,7 @@ class Residual(nn.Module):
             f"{self.__class__.__name__}(\n"
             f"   module={self.module},\n"
             f"   p_dropout={p_dropout},\n"
-            f"   interaction={self.interaction}\n"
+            f"   interaction='{self.interaction}'\n"
             f")"
         )
 
