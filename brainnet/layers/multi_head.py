@@ -206,6 +206,7 @@ class MultiHeadAttention(nn.Module):
         num_keys=None,
         num_values=None,
         num_outputs=None,
+        activation=None,
         bias=True,
         device=None,
         dtype=None,
@@ -219,7 +220,7 @@ class MultiHeadAttention(nn.Module):
         self.linear_k = MultiHeadLinear(num_inputs, num_keys, num_heads, bias, **factory_kwargs)
         self.linear_v = MultiHeadLinear(num_inputs, num_values, num_heads, bias, **factory_kwargs)
         self.linear_o = ConcatLinear(num_values, num_outputs, num_heads, bias, **factory_kwargs)
-        self.attention = Attention()
+        self.attention = Attention(activation)
 
     def forward(self, x, z=None, return_attention=False, mask=None, causal_mask=False):
         """

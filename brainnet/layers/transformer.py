@@ -23,6 +23,8 @@ class TFEncoder(nn.Module):
         bias (bool): Whether to use bias terms in linear layers and normalization. Default: True.
         norm_affine (bool): Whether to use affine transformation in LayerNorm. Default: True.
         activation (nn.Module, optional): Activation function for the feedforward network. Default: nn.GELU().
+        activation_mha (nn.Module, optional): Activation function for the MHA layer. Default: nn.Softmax(dim=-1).
+        ln_eps (float): Epsilon value for LayerNorm. Default: 1e-5.
         device (torch.device, optional): Device for module parameters.
         dtype (torch.dtype, optional): Data type for module parameters.
     """
@@ -39,6 +41,8 @@ class TFEncoder(nn.Module):
         bias=True,
         norm_affine=True,
         activation=None,
+        activation_mha=None,
+        ln_eps=1e-5,
         device=None,
         dtype=None,
     ):
@@ -48,10 +52,12 @@ class TFEncoder(nn.Module):
         activation = activation or nn.GELU()
         super().__init__()
         self.mha = Residual(
-            MultiHeadAttention(num_inputs, num_heads, num_keys, num_values, num_outputs, bias, **factory_kwargs),
+            MultiHeadAttention(
+                num_inputs, num_heads, num_keys, num_values, num_outputs, activation_mha, bias, **factory_kwargs
+            ),
             p_dropout,
         )
-        self.norm_mha = nn.LayerNorm(num_outputs, elementwise_affine=norm_affine, bias=bias, **factory_kwargs)
+        self.norm_mha = nn.LayerNorm(num_outputs, ln_eps, norm_affine, bias, **factory_kwargs)
 
         self.ffn = Residual(
             nn.Sequential(
@@ -61,7 +67,7 @@ class TFEncoder(nn.Module):
             ),
             p_dropout,
         )
-        self.norm_ffn = nn.LayerNorm(num_outputs, elementwise_affine=norm_affine, bias=bias, **factory_kwargs)
+        self.norm_ffn = nn.LayerNorm(num_outputs, ln_eps, norm_affine, bias, **factory_kwargs)
 
     def forward(self, x, z=None, return_attention=False, mask=None, causal_mask=False):
         """
@@ -110,6 +116,8 @@ class TFDecoder(nn.Module):
         bias (bool): Whether to use bias terms in linear layers and normalization. Default: True.
         norm_affine (bool): Whether to use affine transformation in LayerNorm. Default: True.
         activation (nn.Module, optional): Activation function for the feedforward network. Default: nn.GELU().
+        activation_mha (nn.Module, optional): Activation function for the MHA layer. Default: nn.Softmax(dim=-1).
+        ln_eps (float): Epsilon value for LayerNorm. Default: 1e-5.
         device (torch.device, optional): Device for module parameters.
         dtype (torch.dtype, optional): Data type for module parameters.
     """
@@ -126,6 +134,8 @@ class TFDecoder(nn.Module):
         bias=True,
         norm_affine=True,
         activation=None,
+        activation_mha=None,
+        ln_eps=1e-5,
         device=None,
         dtype=None,
     ):
@@ -135,11 +145,13 @@ class TFDecoder(nn.Module):
         activation = activation or nn.GELU()
         super().__init__()
         self.mha = Residual(
-            MultiHeadAttention(num_inputs, num_heads, num_keys, num_values, num_outputs, bias, **factory_kwargs),
+            MultiHeadAttention(
+                num_inputs, num_heads, num_keys, num_values, num_outputs, activation_mha, bias, **factory_kwargs
+            ),
             p_dropout,
         )
 
-        self.norm_mha = nn.LayerNorm(num_outputs, elementwise_affine=norm_affine, bias=bias, **factory_kwargs)
+        self.norm_mha = nn.LayerNorm(num_outputs, ln_eps, norm_affine, bias, **factory_kwargs)
 
         # Encoder can be re-used for the second part of the decoder
         self.encoder = TFEncoder(
@@ -153,6 +165,7 @@ class TFDecoder(nn.Module):
             bias,
             norm_affine,
             activation,
+            activation_mha,
             **factory_kwargs,
         )
 
